@@ -3,7 +3,7 @@ package de.fewi.ptwa.controller;
 import de.fewi.ptwa.util.ProviderUtil;
 import de.fewi.ptwa.entity.TripData;
 import de.schildbach.pte.NetworkProvider;
-import de.schildbach.pte.VagfrProvider;
+import de.schildbach.pte.ShProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.Product;
@@ -33,14 +33,20 @@ public class ConnectionController {
 
     @RequestMapping(value = "/connection", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity connection(@RequestParam(value = "from", required = true) String from, @RequestParam(value = "to", required = true) String to, @RequestParam(value = "provider", required = false) String providerName, @RequestParam(value = "product", required = true) char product, @RequestParam(value = "timeOffset", required = true, defaultValue = "0") int timeOffset) throws IOException {
+    public ResponseEntity connection(@RequestParam(value = "from", required = true)
+      String from, @RequestParam(value = "to", required = true)
+      String to, @RequestParam(value = "provider", required = false)
+      String providerName, @RequestParam(value = "product", required = true)
+      char product, @RequestParam(value = "timeOffset", required = true, defaultValue = "0") int timeOffset) throws IOException {
         NetworkProvider provider;
         if(providerName != null)
         {
             provider = ProviderUtil.getObjectForProvider(providerName);
         }
-        else
-            provider = new VagfrProvider();
+        else {
+            provider = new ShProvider();
+        }
+        System.out.println(provider);
         plannedDepartureTime.setTime(new Date().getTime() + timeOffset * 60 * 1000);
         char[] products = {product};
         QueryTripsResult efaData = provider.queryTrips(new Location(LocationType.STATION, from), null, new Location(LocationType.STATION, to), plannedDepartureTime, true, Product.fromCodes(products), null, null, null, null);
@@ -57,20 +63,24 @@ public class ConnectionController {
             } else
                 return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(list);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("EFA error status: " + efaData.status.name());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("LOLTEST EFA error status: " + efaData.status.name());
     }
 
 
     @RequestMapping(value = "/connectionEsp", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity departureEsp(@RequestParam(value = "from", required = true) String from, @RequestParam(value = "to", required = true) String to, @RequestParam(value = "provider", required = false) String providerName, @RequestParam(value = "product", required = true) char product, @RequestParam(value = "timeOffset", required = true, defaultValue = "0") int timeOffset) throws IOException {
+    public ResponseEntity departureEsp(@RequestParam(value = "from", required = true)
+      String from, @RequestParam(value = "to", required = true)
+      String to, @RequestParam(value = "provider", required = false)
+      String providerName, @RequestParam(value = "product", required = true)
+      char product, @RequestParam(value = "timeOffset", required = true, defaultValue = "0") int timeOffset) throws IOException {
         NetworkProvider provider;
         if(providerName != null)
         {
             provider = ProviderUtil.getObjectForProvider(providerName);
         }
         else
-            provider = new VagfrProvider();
+            provider = new ShProvider();
         plannedDepartureTime.setTime(new Date().getTime() + timeOffset * 60 * 1000);
         char[] products = {product};
         QueryTripsResult efaData = provider.queryTrips(new Location(LocationType.STATION, from), null, new Location(LocationType.STATION, to), plannedDepartureTime, true, Product.fromCodes(products), null, null, null, null);
@@ -99,7 +109,7 @@ public class ConnectionController {
             provider = ProviderUtil.getObjectForProvider(providerName);
         }
         else
-            provider = new VagfrProvider();
+            provider = new ShProvider();
         plannedDepartureTime.setTime(new Date().getTime() + timeOffset * 60 * 1000);
         char[] products = {product};
         QueryTripsResult efaData = provider.queryTrips(new Location(LocationType.STATION, from), null, new Location(LocationType.STATION, to), plannedDepartureTime, true, Product.fromCodes(products), null, null, null, null);
@@ -114,6 +124,7 @@ public class ConnectionController {
 
             if (leg != null) {
                 Date departureTime = leg.getDepartureTime();
+                System.out.println(departureTime);
                 if (departureTime.after(plannedDepartureTime) && leg.departure.id.equals(from) && leg.arrival.id.equals(to) && !leg.departureStop.departureCancelled) {
                     TripData data = new TripData();
                     data.setFrom(trip.from.name);
@@ -127,20 +138,7 @@ public class ConnectionController {
                     data.setPlannedDepartureTime(df.format(leg.departureStop.plannedDepartureTime));
                     data.setPlannedDepartureTimestamp(leg.departureStop.plannedDepartureTime.getTime());
 
-                    if (mode.equals("esp") && leg.departureStop.getDepartureDelay() / 1000 >= 60) {
-                        //Correct time, because trams with delay arrive most time earlier
-                        Date correctedTime = new Date(leg.departureStop.predictedDepartureTime.getTime() - 60000);
-                        data.setDepartureTime(df.format((correctedTime)));
-                        data.setDepartureTimestamp(correctedTime.getTime());
-
-                    } else {
-                        //Predicted time
-                        data.setDepartureTime(df.format((leg.departureStop.predictedDepartureTime)));
-                        data.setDepartureTimestamp(leg.departureStop.predictedDepartureTime.getTime());
-                    }
-
-
-                    data.setDepartureDelay(leg.departureStop.getDepartureDelay() / 1000);
+//                    data.setDepartureDelay(leg.departureStop.getDepartureDelay() / 1000);
 
                     list.add(data);
                 }
@@ -150,7 +148,7 @@ public class ConnectionController {
         }
         return list;
     }
-    
+
 
     private List<TripData> findMoreTrips(QueryTripsContext context, String from, String to, String mode, NetworkProvider provider) {
         List<TripData> data = new ArrayList();
