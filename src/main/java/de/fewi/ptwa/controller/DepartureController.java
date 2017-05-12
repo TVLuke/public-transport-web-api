@@ -3,7 +3,7 @@ package de.fewi.ptwa.controller;
 import de.fewi.ptwa.entity.DepartureData;
 import de.fewi.ptwa.util.ProviderUtil;
 import de.schildbach.pte.NetworkProvider;
-import de.schildbach.pte.VagfrProvider;
+import de.schildbach.pte.ShProvider;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.StationDepartures;
@@ -45,11 +45,12 @@ public class DepartureController {
 
     @RequestMapping(value = "/departure", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity departure(@RequestParam(value = "from", required = true) String from, @RequestParam(value = "provider", required = false) String providerName, @RequestParam(value = "limit", defaultValue = "10") int limit) throws IOException {
+    public ResponseEntity departure(@RequestParam(value = "from", required = true) String from,
+      @RequestParam(value = "provider", required = false) String providerName,
+      @RequestParam(value = "limit", defaultValue = "10") int limit) throws IOException {
         try {
-            NetworkProvider provider = getNetworkProvider(providerName);
-            if (provider == null)
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Provider " + providerName + " not found or can not instantiated...");
+            //dirty hack
+            NetworkProvider provider = new ShProvider();
             QueryDeparturesResult efaData = provider.queryDepartures(from, new Date(), 120, true);
             if (efaData.status.name().equals("OK")) {
                 List<DepartureData> list = new ArrayList<>();
@@ -73,7 +74,9 @@ public class DepartureController {
 
     @RequestMapping(value = "/departureFHEM", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity departureFHEM(@RequestParam(value = "from", required = true) String from, @RequestParam(value = "provider", required = false) String providerName, @RequestParam(value = "limit", defaultValue = "10") int limit) throws IOException {
+    public ResponseEntity departureFHEM(@RequestParam(value = "from", required = true) String from,
+      @RequestParam(value = "provider", required = false) String providerName,
+      @RequestParam(value = "limit", defaultValue = "10") int limit) throws IOException {
         try {
             NetworkProvider provider = getNetworkProvider(providerName);
             if (provider == null)
@@ -134,7 +137,7 @@ public class DepartureController {
         if (providerName != null) {
             provider = ProviderUtil.getObjectForProvider(providerName);
         } else
-            provider = new VagfrProvider();
+            provider = new ShProvider();
         return provider;
     }
 

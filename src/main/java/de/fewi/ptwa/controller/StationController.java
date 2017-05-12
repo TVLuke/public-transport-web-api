@@ -2,7 +2,7 @@ package de.fewi.ptwa.controller;
 
 import de.fewi.ptwa.util.ProviderUtil;
 import de.schildbach.pte.NetworkProvider;
-import de.schildbach.pte.VagfrProvider;
+import de.schildbach.pte.ShProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.SuggestLocationsResult;
@@ -31,8 +31,9 @@ public class StationController {
         NetworkProvider provider;
         if (providerName != null) {
             provider = ProviderUtil.getObjectForProvider(providerName);
-        } else
-            provider = new VagfrProvider();
+        } else {
+            provider = new ShProvider();
+        }
         if (provider == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Provider " + providerName + " not found or can not instantiated...");
         SuggestLocationsResult suggestLocations = provider.suggestLocations(query);
@@ -52,13 +53,13 @@ public class StationController {
             } else {
                 resultList.addAll(suggestLocations.getLocations());
             }
-            return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(resultList);    
+            return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(resultList);
         } else {
-            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body("Remote Service is down or temporarily not available");    
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body("Remote Service is down or temporarily not available");
         }
     }
-    
-    
+
+
     private LocationType getLocationType(String locationType) {
         if (locationType == null || "*".equals(locationType)) {
             return LocationType.ANY;
